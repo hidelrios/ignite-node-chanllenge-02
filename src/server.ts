@@ -1,13 +1,12 @@
 import fastify from "fastify";
-import { knex } from "./database";
 import { env } from "./env";
+import { usersRoutes } from "./routes/users";
 
 const app = fastify();
 
-app.get("/ping", async () => {
-  const tables = await knex("sqlite_schema").select("*");
-  return tables;
-});
+app.register(usersRoutes,{
+  prefix: '/api/users',
+})
 
 app
   .listen({
