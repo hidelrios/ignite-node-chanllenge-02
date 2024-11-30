@@ -4,12 +4,9 @@ import { z } from "zod";
 import { randomUUID } from "crypto";
 import { checkSessionIdExists } from "../middlewares/check-session-id-exists";
 export async function mealsRoutes(app: FastifyInstance) {
-  // Obtem a lista de refeições
+  // Obtem a lista de refeições cadastradas
   app.get(
     "/",
-    // {
-    //   preHandler: [checkSessionIdExists],
-    // },
     async () => {
       const meals = await knex("meals").select("*");
 
@@ -69,6 +66,17 @@ export async function mealsRoutes(app: FastifyInstance) {
 
       const { name, description, date, isOnDiet } =
         await createMealBodySchema.parse(req.body);
+
+      // Verifica se a descrição já existe em outra refeição
+      const existingDescription = await knex("meals")
+        .where("description", description)
+        .first();
+
+      if (existingDescription) {
+        return res
+          .status(400)
+          .send({ message: "Descrição já está em uso por outra refeição." });
+      }
 
       const meal = await knex("meals")
         .insert({
@@ -167,7 +175,6 @@ export async function mealsRoutes(app: FastifyInstance) {
     "/metrics",
     { preHandler: [checkSessionIdExists] },
     async (request, reply) => {
-        
       const totalMeals = await knex("meals")
         .where({ user_id: request.user?.id })
         .orderBy("date", "desc");
